@@ -1,53 +1,43 @@
-USE cohortesOp2;
-SELECT * FROM login;
-SELECT user_id, week(login_date) AS login_week
-FROM login
-GROUP BY user_id,week(login_date);
 
--- Para calcular la tasa de retención en SQL, necesitamos calcular la primera semana de inicio de sesión para cada usuario. 
--- simplemente usaremos la función MIN y GROUP BY para calcular la primera semana de inicio de sesión para cada usuario
-SELECT user_id, min(week(login_date)) AS first_week
-FROM login
-GROUP BY user_id;
+1. /# hbase shell
 
--- Combinar las 2 tablas para login_week y first_week 
--- para cada usuario usando la consulta a continuación, con INNER JOIN, para calcular la tasa de retención en SQL.
-select a.user_id,a.login_week,b.first_week as first_week  from   
-(SELECT user_id,week(login_date) AS login_week
-FROM login
-GROUP BY user_id,week(login_date)) a,
-(SELECT user_id,min(week(login_date)) AS first_week
-FROM login
-GROUP BY user_id) b
-where a.user_id=b.user_id;
+-- Crear tabla y grupos de columnas
+2. create 'NOSQL','BASES DATOS','origen'  
 
--- A continuación, calculamos la diferencia entre login_week y first_week para calcular week_number (número de semana)
-select a.user_id,a.login_week,b.first_week as first_week, a.login_week-first_week as week_number from 
-(SELECT user_id, week(login_date) AS login_week 
-FROM login 
-GROUP BY user_id,week(login_date)) a,
-(SELECT user_id,min(week(login_date)) AS first_week
-FROM login
-GROUP BY user_id) b
-where a.user_id=b.user_id;
+-- Listar las tablas que hay en la base de datos
+3. list
 
--- Pivot the result
-select first_week,
-       SUM(CASE WHEN week_number = 0 THEN 1 ELSE 0 END) AS week_0,
-       SUM(CASE WHEN week_number = 1 THEN 1 ELSE 0 END) AS week_1,
-       SUM(CASE WHEN week_number = 2 THEN 1 ELSE 0 END) AS week_2,
-       SUM(CASE WHEN week_number = 3 THEN 1 ELSE 0 END) AS week_3,
-       SUM(CASE WHEN week_number = 4 THEN 1 ELSE 0 END) AS week_4,
-       SUM(CASE WHEN week_number = 5 THEN 1 ELSE 0 END) AS week_5,
-       SUM(CASE WHEN week_number = 6 THEN 1 ELSE 0 END) AS week_6,
-       SUM(CASE WHEN week_number = 7 THEN 1 ELSE 0 END) AS week_7,
-       SUM(CASE WHEN week_number = 8 THEN 1 ELSE 0 END) AS week_8,
-       SUM(CASE WHEN week_number = 9 THEN 1 ELSE 0 END) AS week_9
-       FROM (
-       select a.user_id,a.login_week,b.first_week as first_week,
-              a.login_week-first_week as week_number
-	   FROM  (SELECT user_id, week(login_date) AS login_week FROM login GROUP BY user_id,week(login_date)) as a,
-	         (SELECT user_id, min(week(login_date)) AS first_week FROM login GROUP BY user_id ) as b
-	   WHERE a.user_id=b.user_id) as with_week_number
-	   group by first_week
-       order by first_week;
+-- Listar los campos que contiene la tabla 
+4. describe 'NOSQL'
+
+--Guardar o Actualizar registros se usa funcion put, actualizar registros
+5. put 'NOSQL', '2023/r001', 'BASES DATOS:nombre', 'MONGODB'
+   put 'NOSQL', '2023/r002', 'BASES DATOS:nombre', 'DYNAMODB'
+   put 'NOSQL', '2023/r003', 'BASES DATOS:nombre', 'CASSANDRA'
+   put 'NOSQL', '2023/r003', 'BASES DATOS:caracteristicas', 'Escalabilidad horizontal'
+
+--Obtener registros se usa funcion get, definiendo llave
+6. get 'NOSQL','2023/r002'
+6.1 put 'NOSQL', '2023/r002', 'BASES DATOS:nombre', 'REDIS' 
+6.2 get 'NOSQL','2023/r002' 
+
+--Hacer peticiones registro funcion scan, por palabra clave
+7. scan 'NOSQL', {FILTER =>"ValueFilter(=,'regexstring:juan')"}
+
+--Borrar registros
+8. delete 'NOSQL','2023/r003', 'BASES DATOS:caracteristicas'
+
+--Borrar fila
+9. deleteall 'NOSQL','2023/r003'
+
+-- Desabilitar  tabla
+10. disable 'NOSQL'
+-- Validar que no permite hacer escaneo
+scan 'NOSQL', {FILTER =>"ValueFilter(=,'regexstring:juan')"}
+
+11. enable 'NOSQL'
+scan 'NOSQL', {FILTER =>"ValueFilter(=,'regexstring:juan')"}
+
+-- Borrar tabla
+12. disable 'NOSQL'
+13. drop 'NOSQL'
